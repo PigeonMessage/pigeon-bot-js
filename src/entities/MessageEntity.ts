@@ -29,6 +29,10 @@ export class MessageEntity extends BaseEntity {
     return this._data.content;
   }
 
+  get replyToMessageId(): number | null {
+    return this._data.reply_to_message_id;
+  }
+
   async edit(content: string): Promise<void> {
     await this.client.editMessage(this.id, content);
     this._data.content = content;
