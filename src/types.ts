@@ -63,19 +63,116 @@ export interface ChatPreview {
   unread_count: number;
 }
 
-export interface MessageAttachment {
-  id: number;
-  chat_id: number;
-  uploaded_by: number;
-  file_type: string;
-  file_url: string;
-  file_name: string;
-  file_size: number;
-  mime_type: string;
-  thumbnail_url: string | null;
-  width: number | null;
-  height: number | null;
-  duration: number | null;
+export type MessageMedia =
+  | {
+      type: "Photo";
+      file_id: string;
+      file_url: string;
+      width: number;
+      height: number;
+      file_size: number;
+      thumbnail_url?: string | null;
+      spoiler?: boolean;
+    }
+  | {
+      type: "Document";
+      file_id: string;
+      file_url: string;
+      file_name: string;
+      mime_type: string;
+      file_size: number;
+      thumbnail_url?: string | null;
+    }
+  | {
+      type: "Video";
+      file_id: string;
+      file_url: string;
+      width: number;
+      height: number;
+      duration?: number | null;
+      file_size: number;
+      thumbnail_url?: string | null;
+      supports_streaming?: boolean;
+    }
+  | {
+      type: "Audio";
+      file_id: string;
+      file_url: string;
+      duration?: number | null;
+      file_name?: string | null;
+      mime_type: string;
+      file_size: number;
+      thumbnail_url?: string | null;
+    }
+  | {
+      type: "Voice";
+      file_id: string;
+      file_url: string;
+      duration?: number | null;
+      file_size: number;
+      waveform?: number[] | null;
+    }
+  | {
+      type: "Gif";
+      file_id: string;
+      file_url: string;
+      width: number;
+      height: number;
+      duration?: number | null;
+      file_size: number;
+      preview_url?: string | null;
+    }
+  | {
+      type: "Sticker";
+      file_id: string;
+      file_url: string;
+      width: number;
+      height: number;
+      emoji?: string | null;
+      set_name?: string | null;
+    }
+  | {
+      type: "Geo";
+      latitude: number;
+      longitude: number;
+      title?: string | null;
+      address?: string | null;
+    }
+  | {
+      type: "Contact";
+      phone_number: string;
+      first_name: string;
+      last_name?: string | null;
+      vcard?: string | null;
+    }
+  | {
+      type: "Poll";
+      question: string;
+      options: PollOption[];
+      allows_multiple: boolean;
+      anonymous: boolean;
+      is_quiz: boolean;
+      has_voted?: boolean | null;
+      user_voted_options?: number[] | null;
+      explanation?: string | null;
+      close_period?: number | null;
+      correct_option_indexes?: number[] | null;
+      allow_revote: boolean;
+    };
+
+export interface PollOption {
+  text: string;
+  id?: number | null;
+  poll_id?: number | null;
+  is_correct?: boolean | null;
+  votes_count?: number | null;
+  voters?: UserPublic[] | null;
+}
+
+export interface PollVote {
+  poll_id: number;
+  option_id: number;
+  user_id: number;
   created_at: string;
 }
 
@@ -93,11 +190,20 @@ export interface Message {
   sender_id: number;
   reply_to_message_id: number | null;
   content: string;
+  media?: MessageMedia[] | null;
   is_edited: boolean;
   created_at: string;
   edited_at: string | null;
-  attachments?: MessageAttachment[] | null;
   reactions?: MessageReaction[] | null;
+  new_chat_members?: UserPublic[] | null;
+  left_chat_member?: UserPublic | null;
+  left_chat_member_id?: number | null;
+  new_chat_title?: string | null;
+  delete_chat_photo?: boolean | null;
+  chat_created_type?: string | null;
+  migrate_to_chat_id?: number | null;
+  migrate_from_chat_id?: number | null;
+  pinned_message?: Message | null;
 }
 
 export type WsMessageType =
@@ -111,6 +217,8 @@ export type WsMessageType =
   | "delete_message"
   | "add_reaction"
   | "remove_reaction"
+  | "vote_poll"
+  | "unvote_poll"
   | "mark_as_read"
   | "mark_all_as_read"
   | "typing"

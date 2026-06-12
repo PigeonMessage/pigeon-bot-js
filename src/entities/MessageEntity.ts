@@ -33,6 +33,14 @@ export class MessageEntity extends BaseEntity {
     return this._data.reply_to_message_id;
   }
 
+  get media(): Message["media"] {
+    return this._data.media;
+  }
+
+  get reactions(): Message["reactions"] {
+    return this._data.reactions;
+  }
+
   async edit(content: string): Promise<void> {
     await this.client.editMessage(this.id, content);
     this._data.content = content;
@@ -53,14 +61,9 @@ export class MessageEntity extends BaseEntity {
 
   async reply(
     content: string,
-    attachmentIds?: number[] | null,
+    media?: Message["media"] | null,
   ): Promise<void> {
-    await this.client.sendMessage(
-      this.chatId,
-      content,
-      this.id,
-      attachmentIds,
-    );
+    await this.client.sendMessage(this.chatId, content, this.id, media);
   }
 }
 

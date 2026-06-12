@@ -1,10 +1,11 @@
+
 import type { ApiResponse } from "./types";
 import type {
   Chat,
   ChatMember,
   ChatPreview,
   Message,
-  MessageAttachment,
+  MessageMedia,
   UserPublic,
 } from "./types";
 import type { ClientConfig } from "./config";
@@ -37,33 +38,26 @@ export class HttpClient {
     body?: unknown,
   ): Promise<T> {
     const url = resolveApiUrl(this.config, path);
-
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...this.authHeader(),
     };
-
     const res = await fetch(url, {
       method,
       headers,
       body: body != null ? JSON.stringify({ data: body }) : undefined,
     });
-
     if (res.status === 204) {
       // @ts-expect-error
       return undefined;
     }
-
     const json = (await res.json()) as ApiResponse<T>;
-
     if (json.error) {
       throw new Error(json.error.message || "Request failed");
     }
-
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
-
     return json.data as T;
   }
 
@@ -81,12 +75,22 @@ export class HttpClient {
     return this.request<Chat>("GET", `/chats/${id}`);
   }
 
-  async getMyChats(): Promise<ChatPreview[]> {
-    return this.request<ChatPreview[]>("GET", `/chats`);
-  }
-
   async getChatMembers(chatId: number): Promise<ChatMember[]> {
     return this.request<ChatMember[]>("GET", `/chats/${chatId}/members`);
+  }
+
+  async updateMemberPermissions(
+    chatId: number,
+    userId: number,
+    permissions: {
+      role?: string;
+      can_send_messages?: boolean;
+      can_manage_messages?: boolean;
+      can_manage_members?: boolean;
+      can_manage_chat?: boolean;
+    },
+  ): Promise<void> {
+    await this.request<void>("PUT", `/chats/${chatId}/members/${userId}`, permissions);
   }
 
   async removeMember(chatId: number, userId: number): Promise<void> {
@@ -94,67 +98,43 @@ export class HttpClient {
   }
 
   // ========== MESSAGES ==========
-  async getMessages(
-    chatId: number,
-    query: GetMessagesQuery = {},
-  ): Promise<Message[]> {
+  async getMessages(chatId: number, query: GetMessagesQuery = {}): Promise<Message[]> {
     const params = new URLSearchParams();
     if (query.limit != null) params.set("limit", String(query.limit));
     if (query.before_id != null) params.set("before_id", String(query.before_id));
     if (query.after_id != null) params.set("after_id", String(query.after_id));
-
     const qs = params.toString();
-    const path =
-      qs.length > 0
-        ? `/chats/${chatId}/messages?${qs}`
-        : `/chats/${chatId}/messages`;
-
+    const path = qs ? `/chats/${chatId}/messages?${qs}` : `/chats/${chatId}/messages`;
     const url = resolveApiUrl(this.config, path);
     const res = await fetch(url, {
       method: "GET",
-      headers: {
-        ...this.authHeader(),
-      },
+      headers: this.authHeader(),
     });
-
     const json = (await res.json()) as ApiResponse<Message[]>;
-
     if (json.error) {
       throw new Error(json.error.message || "Request failed");
     }
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
-
     return (json.data || []) as Message[];
   }
 
-  // ========== ATTACHMENTS ==========
-  async uploadAttachment(
-    chatId: number,
-    formData: FormData,
-  ): Promise<MessageAttachment> {
-    const url = resolveApiUrl(this.config, `/chats/${chatId}/attachments`);
-
+  // ========== MEDIA UPLOAD ==========
+  async uploadMedia(chatId: number, formData: FormData): Promise<MessageMedia> {
+    const url = resolveApiUrl(this.config, `/chats/${chatId}/upload`);
     const res = await fetch(url, {
       method: "POST",
-      headers: {
-        ...this.authHeader(),
-      },
-      body: formData,
+      headers: this.authHeader(),
+      body: formData as any,
     });
-
-    const json = (await res.json()) as ApiResponse<MessageAttachment>;
-
+    const json = (await res.json()) as ApiResponse<MessageMedia>;
     if (json.error) {
       throw new Error(json.error.message || "Upload failed");
     }
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
-
-    return json.data as MessageAttachment;
+    return json.data as MessageMedia;
   }
 }
-
-

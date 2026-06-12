@@ -4,7 +4,7 @@ import type {
   ChatMember,
   ChatPreview,
   Message,
-  MessageAttachment,
+  MessageMedia,
 } from "../types";
 
 export class ChatEntity extends BaseEntity {
@@ -44,18 +44,16 @@ export class ChatEntity extends BaseEntity {
   async sendMessage(
     content: string,
     replyTo?: number | null,
-    attachmentIds?: number[] | null,
+    media?: MessageMedia[] | null,
   ): Promise<void> {
-    await this.client.sendMessage(this.id, content, replyTo, attachmentIds);
+    await this.client.sendMessage(this.id, content, replyTo, media);
   }
 
   async removeMember(userId: number): Promise<void> {
     await this.client.removeMember(this.id, userId);
   }
 
-  async uploadAttachment(formData: FormData): Promise<MessageAttachment> {
-    return this.client.uploadAttachment(this.id, formData);
+  async uploadMedia(formData: FormData): Promise<MessageMedia> {
+    return this.client.uploadMedia(this.id, formData);
   }
 }
-
-
